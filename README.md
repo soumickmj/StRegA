@@ -55,7 +55,7 @@ BibTeX entry:
 
 
 ```bibtex
-@inproceedings{mickISMRM22micdir,
+@inproceedings{mickISMRM22strega,
       author = {Chatterjee, Soumick and Sciarra, Alessandro and D{\"u}nnwald, Max and Tummala, Pavan and Agrawal, Shubham Kumar and Jauhari, Aishwarya and Kalra, Aman and Oeltze-Jafra, Steffen and Speck, Oliver and N{\"u}rnberger, Andreas},
       year = {2022},
       month = {05},
