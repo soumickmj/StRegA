@@ -1,4 +1,4 @@
-# **S**egmen**t**ation **Reg**ularized **A**nomaly (StRegA)
+# **S**egmen**t**ation **Reg**ularised **A**nomaly (StRegA)
 
 Official code of the paper "StRegA: Unsupervised Anomaly Detection in Brain MRIs using a Compact Context-encoding Variational Autoencoder" (https://arxiv.org/abs/2201.13271).
 
