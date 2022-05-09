@@ -5,6 +5,8 @@ Official code of the paper "StRegA: Unsupervised Anomaly Detection in Brain MRIs
 This was first presented at ISMRM-ESMRMB 2022, London.
 Abstract available on RG: https://www.researchgate.net/publication/358357400_StRegA_Unsupervised_Anomaly_Detection_in_Brain_MRIs_using_Compact_Context-encoding_Variational_Autoencoder
 
+The name "StRegA" is inspired by the name of the Italian herb liquore with saffron - Strega (following the tradition of namming MR-related products with name of alchoholic drinks or liquores.
+
 ## Information regarding this repo
 
 ### Code structure
