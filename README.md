@@ -34,8 +34,6 @@ If you like this repository, please click on Star!
 
 If you use this approach in your research or use codes from this repository, please cite either or both of the following in your publications:
 
-The complete manuscript on ArXiv:-
-
 > [Soumick Chatterjee, Alessandro Sciarra, Max Dünnwald, Pavan Tummala, Shubham Kumar Agrawal, Aishwarya Jauhari, Aman Kalra, Steffen Oeltze-Jafra, Oliver Speck, Andreas Nürnberger: StRegA: Unsupervised Anomaly Detection in Brain MRIs using a Compact Context-encoding Variational Autoencoder (Computers in Biology and Medicine, Oct 2022)](https://doi.org/10.1016/j.compbiomed.2022.106093)
 
 BibTeX entry:
@@ -52,6 +50,10 @@ BibTeX entry:
 }
 }
 ```
+
+The complete manuscript is also on ArXiv:-
+> [Soumick Chatterjee, Alessandro Sciarra, Max Dünnwald, Pavan Tummala, Shubham Kumar Agrawal, Aishwarya Jauhari, Aman Kalra, Steffen Oeltze-Jafra, Oliver Speck, Andreas Nürnberger: StRegA: Unsupervised Anomaly Detection in Brain MRIs using a Compact Context-encoding Variational Autoencoder (arXiv:2201.13271
+, Jan 2022)](https://arxiv.org/abs/2201.13271)
 
 The ISMRM-ESMRMB 2022 abstract:-
 
