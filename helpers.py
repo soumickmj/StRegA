@@ -17,10 +17,7 @@ def kl_loss_fn(z_post, sum_samples=True, correct=False, sumdim=(1,2,3)):
         kl_div = torch.sum(kl_div, dim=sumdim)
     else:
         kl_div = torch.mean(kl_div, dim=sumdim)
-    if sum_samples:
-        return torch.mean(kl_div)
-    else:
-        return kl_div
+    return torch.mean(kl_div) if sum_samples else kl_div
 
 def rec_loss_fn(recon_x, x, sum_samples=True, correct=False, sumdim=(1,2,3)):
     if correct:
@@ -30,10 +27,7 @@ def rec_loss_fn(recon_x, x, sum_samples=True, correct=False, sumdim=(1,2,3)):
     else:
         log_p_x_z = -torch.abs(recon_x - x)
         log_p_x_z = torch.mean(log_p_x_z, dim=sumdim)
-    if sum_samples:
-        return -torch.mean(log_p_x_z)
-    else:
-        return -log_p_x_z
+    return -torch.mean(log_p_x_z) if sum_samples else -log_p_x_z
 
 def geco_beta_update(beta, error_ema, goal, step_size, min_clamp=1e-10, max_clamp=1e4, speedup=None):
     constraint = (error_ema - goal).detach()
@@ -48,30 +42,29 @@ def geco_beta_update(beta, error_ema, goal, step_size, min_clamp=1e-10, max_clam
     return beta
 
 def get_ema(new, old, alpha):
-    if old is None:
-        return new
-    return (1.0 - alpha) * new + alpha * old
+    return new if old is None else (1.0 - alpha) * new + alpha * old
 
 
 def get_range_val(value, rnd_type="uniform"):
-    if isinstance(value, (list, tuple, np.ndarray)):
-        if len(value) == 2:
-            if value[0] == value[1]:
-                n_val = value[0]
-            else:
-                orig_type = type(value[0])
-                if rnd_type == "uniform":
-                    n_val = random.uniform(value[0], value[1])
-                elif rnd_type == "normal":
-                    n_val = random.normalvariate(value[0], value[1])
-                n_val = orig_type(n_val)
-        elif len(value) == 1:
-            n_val = value[0]
-        else:
-            raise RuntimeError("value must be either a single vlaue or a list/tuple of len 2")
-        return n_val
-    else:
+    if not isinstance(value, (list, tuple, np.ndarray)):
         return value
+    if (
+        len(value) == 2
+        and value[0] == value[1]
+        or len(value) != 2
+        and len(value) == 1
+    ):
+        n_val = value[0]
+    elif len(value) == 2:
+        orig_type = type(value[0])
+        if rnd_type == "uniform":
+            n_val = random.uniform(value[0], value[1])
+        elif rnd_type == "normal":
+            n_val = random.normalvariate(value[0], value[1])
+        n_val = orig_type(n_val)
+    else:
+        raise RuntimeError("value must be either a single vlaue or a list/tuple of len 2")
+    return n_val
     
 def get_square_mask(data_shape, square_size, n_squares, noise_val=(0, 0), channel_wise_n_val=False, square_pos=None):
     """Returns a 'mask' with the same size as the data, where random squares are != 0

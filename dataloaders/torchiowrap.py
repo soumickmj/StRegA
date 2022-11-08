@@ -28,10 +28,7 @@ class H5DSImage(Image):
 
     @property
     def spatial_shape(self):
-        if self.lazypatch:
-            return self.shape
-        else:
-            return self.shape[1:]
+        return self.shape if self.lazypatch else self.shape[1:]
 
     def crop(self, index_ini, index_fin):
         new_origin = nib.affines.apply_affine(self.affine, index_ini)

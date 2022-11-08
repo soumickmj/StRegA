@@ -46,11 +46,7 @@ class ConvModule(nn.Module):
         x = input
 
         if self.conv is not None:
-            if conv_add_input is None:
-                x = self.conv(x)
-            else:
-                x = self.conv(x, **conv_add_input)
-
+            x = self.conv(x) if conv_add_input is None else self.conv(x, **conv_add_input)
         if self.normalization is not None:
             if normalization_add_input is None:
                 x = self.normalization(x)
@@ -97,10 +93,9 @@ class Generator(nn.Module):
 
         # Z_size random numbers
 
-        if not to_1x1:
-            kernel_size_start = [min(4, i) for i in img_size_new]
-        else:
-            kernel_size_start = img_size_new.tolist()
+        kernel_size_start = (
+            img_size_new.tolist() if to_1x1 else [min(4, i) for i in img_size_new]
+        )
 
         if z_dim is not None:
             self.start = ConvModule(z_dim, h_size_bot,
@@ -171,13 +166,11 @@ class Encoder(nn.Module):
         n_channels = image_size[0]
         img_size_new = np.array([image_size[1], image_size[2]])
 
-        if not isinstance(h_size, list) and not isinstance(h_size, tuple):
-            raise AttributeError("h_size has to be either a list or tuple or an int")
-        # elif len(h_size) < 2:
-        #     raise AttributeError("h_size has to contain at least three elements")
-        else:
+        if isinstance(h_size, (list, tuple)):
             h_size_bot = h_size[0]
 
+        else:
+            raise AttributeError("h_size has to be either a list or tuple or an int")
         ### Start block
         self.start = ConvModule(n_channels, h_size_bot,
                                 conv_op=conv_op,
@@ -217,10 +210,9 @@ class Encoder(nn.Module):
                 raise ("h_size to long, one image dimension has already perished")
 
         ### End block
-        if not to_1x1:
-            kernel_size_end = [min(4, i) for i in img_size_new]
-        else:
-            kernel_size_end = img_size_new.tolist()
+        kernel_size_end = (
+            img_size_new.tolist() if to_1x1 else [min(4, i) for i in img_size_new]
+        )
 
         if z_dim is not None:
             self.end = ConvModule(h_size_bot, z_dim,
@@ -282,11 +274,7 @@ class VAE(torch.nn.Module):
         std = torch.exp(log_std)
         z_dist = dist.Normal(mu, std)
 
-        if sample or self.training:
-            z = z_dist.rsample()
-        else:
-            z = mu
-
+        z = z_dist.rsample() if sample or self.training else mu
         x_rec = self.decoder(z, **kwargs)
 
         return x_rec, mu, std
@@ -297,5 +285,4 @@ class VAE(torch.nn.Module):
         return mu, log_std
 
     def decode(self, inpt, **kwargs):
-        x_rec = self.decoder(inpt, **kwargs)
-        return x_rec
+        return self.decoder(inpt, **kwargs)

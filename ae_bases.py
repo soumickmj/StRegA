@@ -74,11 +74,7 @@ class ConvModule(nn.Module):
         x = input
 
         if self.conv is not None:
-            if conv_add_input is None:
-                x = self.conv(x)
-            else:
-                x = self.conv(x, **conv_add_input)
-
+            x = self.conv(x) if conv_add_input is None else self.conv(x, **conv_add_input)
         if self.normalization is not None:
             if normalization_add_input is None:
                 x = self.normalization(x)
@@ -131,7 +127,7 @@ class ConvBlock(nn.Module):
 
         self.conv_list = nn.ModuleList()
 
-        for i in range(self.n_convs):
+        for _ in range(self.n_convs):
             conv_layer = ConvModule(
                 n_featmaps,
                 n_featmaps,
@@ -202,9 +198,7 @@ class ResBlock(nn.Module):
         x = input
         x = self.conv_block(x)
 
-        out = x + input
-
-        return out
+        return x + input
 
 
 # Basic Generator
@@ -270,10 +264,11 @@ class BasicGenerator(nn.Module):
         ### Start block
         start_block = []
 
-        if not to_1x1:
-            kernel_size_start = [min(conv_params["kernel_size"], i) for i in input_size_new]
-        else:
-            kernel_size_start = input_size_new.tolist()
+        kernel_size_start = (
+            input_size_new.tolist()
+            if to_1x1
+            else [min(conv_params["kernel_size"], i) for i in input_size_new]
+        )
 
         if z_dim is not None:
             self.start = ConvModule(
@@ -378,13 +373,11 @@ class BasicEncoder(nn.Module):
         n_channels = input_size[0]
         input_size_new = np.array(input_size[1:])
 
-        if not isinstance(fmap_sizes, list) and not isinstance(fmap_sizes, tuple):
-            raise AttributeError("fmap_sizes has to be either a list or tuple or an int")
-        # elif len(fmap_sizes) < 2:
-        #     raise AttributeError("fmap_sizes has to contain at least three elements")
-        else:
+        if isinstance(fmap_sizes, (list, tuple)):
             h_size_bot = fmap_sizes[0]
 
+        else:
+            raise AttributeError("fmap_sizes has to be either a list or tuple or an int")
         ### Start block
         self.start = ConvModule(
             n_channels,
@@ -425,10 +418,11 @@ class BasicEncoder(nn.Module):
                 raise ("fmap_sizes to long, one image dimension has already perished")
 
         ### End block
-        if not to_1x1:
-            kernel_size_end = [min(conv_params["kernel_size"], i) for i in input_size_new]
-        else:
-            kernel_size_end = input_size_new.tolist()
+        kernel_size_end = (
+            input_size_new.tolist()
+            if to_1x1
+            else [min(conv_params["kernel_size"], i) for i in input_size_new]
+        )
 
         if z_dim is not None:
             self.end = ConvModule(

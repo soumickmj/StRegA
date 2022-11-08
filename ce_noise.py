@@ -5,24 +5,25 @@ import torch
 
 
 def get_range_val(value, rnd_type="uniform"):
-    if isinstance(value, (list, tuple, np.ndarray)):
-        if len(value) == 2:
-            if value[0] == value[1]:
-                n_val = value[0]
-            else:
-                orig_type = type(value[0])
-                if rnd_type == "uniform":
-                    n_val = random.uniform(value[0], value[1])
-                elif rnd_type == "normal":
-                    n_val = random.normalvariate(value[0], value[1])
-                n_val = orig_type(n_val)
-        elif len(value) == 1:
-            n_val = value[0]
-        else:
-            raise RuntimeError("value must be either a single vlaue or a list/tuple of len 2")
-        return n_val
-    else:
+    if not isinstance(value, (list, tuple, np.ndarray)):
         return value
+    if (
+        len(value) == 2
+        and value[0] == value[1]
+        or len(value) != 2
+        and len(value) == 1
+    ):
+        n_val = value[0]
+    elif len(value) == 2:
+        orig_type = type(value[0])
+        if rnd_type == "uniform":
+            n_val = random.uniform(value[0], value[1])
+        elif rnd_type == "normal":
+            n_val = random.normalvariate(value[0], value[1])
+        n_val = orig_type(n_val)
+    else:
+        raise RuntimeError("value must be either a single vlaue or a list/tuple of len 2")
+    return n_val
 
 
 def get_square_mask(data_shape, square_size, n_squares, noise_val=(0, 0), channel_wise_n_val=False, square_pos=None):

@@ -56,18 +56,23 @@ class MoodValSet(Dataset):
 
     def __getitem__(self, item):
         if self.loadASTrain:
-            if self.torchiosub:
-                return Subject({'img':H5DSImage(self.samples[item][0], lazypatch=self.lazypatch)})
-            else:
-                return torch.from_numpy(self.samples[item][0][()]).unsqueeze(0)
-        else:
-            if self.torchiosub:
-                if len(self.samples[item]) == 2:
-                    return Subject({'img':H5DSImage(self.samples[item][0], lazypatch=self.lazypatch),
-                                    'gt':H5DSImage(self.samples[item][1], lazypatch=self.lazypatch)})
-                else:
-                    return Subject({'img':H5DSImage(self.samples[item], lazypatch=self.lazypatch),
-                                    'gt':H5DSImage(self.samples[item], lazypatch=self.lazypatch)}) #this is dirty. TODO
+            return (
+                Subject(
+                    {
+                        'img': H5DSImage(
+                            self.samples[item][0], lazypatch=self.lazypatch
+                        )
+                    }
+                )
+                if self.torchiosub
+                else torch.from_numpy(self.samples[item][0][()]).unsqueeze(0)
+            )
 
-            else:
-                return (torch.from_numpy(self.samples[item][0][()]).unsqueeze(0), torch.from_numpy(self.samples[item][1][()]).unsqueeze(0))
+        if not self.torchiosub:
+            return (torch.from_numpy(self.samples[item][0][()]).unsqueeze(0), torch.from_numpy(self.samples[item][1][()]).unsqueeze(0))
+        if len(self.samples[item]) == 2:
+            return Subject({'img':H5DSImage(self.samples[item][0], lazypatch=self.lazypatch),
+                            'gt':H5DSImage(self.samples[item][1], lazypatch=self.lazypatch)})
+        else:
+            return Subject({'img':H5DSImage(self.samples[item], lazypatch=self.lazypatch),
+                            'gt':H5DSImage(self.samples[item], lazypatch=self.lazypatch)}) #this is dirty. TODO

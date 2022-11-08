@@ -5,20 +5,31 @@ import torch.nn as nn
 
 # Model
 def down_conv(in_channels, out_channels, kernel_size, padding, stride):
-    block = nn.Sequential(
-        nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, padding=padding, stride=stride),
+    return nn.Sequential(
+        nn.Conv2d(
+            in_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            padding=padding,
+            stride=stride,
+        ),
         nn.BatchNorm2d(out_channels),
-        nn.ReLU(inplace=True)
+        nn.ReLU(inplace=True),
     )
-    return block
 
 def up_conv(in_channels, out_channels, kernel_size, padding, stride, output_padding):
-    block = nn.Sequential(
-        nn.ConvTranspose2d(in_channels, out_channels, kernel_size=kernel_size, padding=padding, stride=stride, output_padding=output_padding),
+    return nn.Sequential(
+        nn.ConvTranspose2d(
+            in_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            padding=padding,
+            stride=stride,
+            output_padding=output_padding,
+        ),
         nn.BatchNorm2d(out_channels),
-        nn.ReLU(inplace=True)
+        nn.ReLU(inplace=True),
     )
-    return block
 
 class Skip_AE(nn.Module):
     def __init__(self):
@@ -43,7 +54,7 @@ class Skip_AE(nn.Module):
         x3 = self.down_conv3(x2)
         x4 = self.down_conv4(x3)
         x5 = self.down_conv5(x4)
-        
+
         #decoder
         y1 = self.up_conv1(x5)
         y1 = y1 + x4
@@ -54,5 +65,4 @@ class Skip_AE(nn.Module):
         y4 = self.up_conv4(y3)
         y4 = nn.Dropout(0.1)(y4 + x1)
         y5 = self.up_conv5(y4)
-        out = torch.tanh(y5)
-        return out
+        return torch.tanh(y5)

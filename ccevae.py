@@ -66,17 +66,10 @@ class VAE(torch.nn.Module):
         mu, log_std = torch.chunk(y1, 2, dim=1)
         std = torch.exp(log_std)
         z_dist = dist.Normal(mu, std)
-        if sample:
-            z_sample = z_dist.rsample()
-        else:
-            z_sample = mu
-
+        z_sample = z_dist.rsample() if sample else mu
         x_rec = self.dec(z_sample)
 
-        if no_dist:
-            return x_rec
-        else:
-            return x_rec, z_dist
+        return x_rec if no_dist else (x_rec, z_dist)
 
     def encode(self, inpt, **kwargs):
         enc = self.enc(inpt, **kwargs)
@@ -85,8 +78,7 @@ class VAE(torch.nn.Module):
         return mu, std
 
     def decode(self, inpt, **kwargs):
-        x_rec = self.dec(inpt, **kwargs)
-        return x_rec
+        return self.dec(inpt, **kwargs)
 
 class AE(torch.nn.Module):
     def __init__(
@@ -148,14 +140,11 @@ class AE(torch.nn.Module):
 
         y1 = self.enc(inpt, **kwargs)
 
-        x_rec = self.dec(y1)
-
-        return x_rec
+        return self.dec(y1)
 
     def encode(self, inpt, **kwargs):
         enc = self.enc(inpt, **kwargs)
         return enc
 
     def decode(self, inpt, **kwargs):
-        rec = self.dec(inpt, **kwargs)
-        return rec
+        return self.dec(inpt, **kwargs)

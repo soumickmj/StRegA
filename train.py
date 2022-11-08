@@ -17,10 +17,10 @@ from helpers import kl_loss_fn, rec_loss_fn, geco_beta_update, get_ema, get_squa
 def train(model, train_loader, validation_loader, num_epochs, optimizer, scaler, device):
     for epoch in range(num_epochs):
         model.train()
-        print('Epoch ' + str(epoch) + ': Train')
+        print(f'Epoch {str(epoch)}: Train')
         for i, data in enumerate(train_loader):
             img = data
-            
+
             tmp = img.view(img.shape[0], 1, -1)
             min_vals = tmp.min(2, keepdim=True).values
             max_vals = tmp.max(2, keepdim=True).values
@@ -34,7 +34,7 @@ def train(model, train_loader, validation_loader, num_epochs, optimizer, scaler,
 
             images = Variable(tensor).to(device) 
             optimizer.zero_grad()
-            
+
             ### VAE Part
             with autocast():
                 loss_vae = 0
@@ -94,12 +94,18 @@ def train(model, train_loader, validation_loader, num_epochs, optimizer, scaler,
             'AMPScaler': scaler.state_dict()
         }
         if epoch%4==0:
-            torch.save(checkpoint, os.path.join(save_path, trainID + '-epoch-' + str(epoch) + ".pth.tar"))
-            
+            torch.save(
+                checkpoint,
+                os.path.join(
+                    save_path, f'{trainID}-epoch-{str(epoch)}.pth.tar'
+                ),
+            )
+
+
         model.eval()
         with torch.no_grad():
-            print('Epoch '+ str(epoch)+ ': Val')
-            for i, data in enumerate(validation_loader):
+            print(f'Epoch {str(epoch)}: Val')
+            for data in validation_loader:
                 img = data
                 tmp = img.view(img.shape[0], 1, -1)
                 min_vals = tmp.min(2, keepdim=True).values
@@ -112,13 +118,13 @@ def train(model, train_loader, validation_loader, num_epochs, optimizer, scaler,
                 tensor_reshaped = tensor_reshaped[~torch.any(tensor_reshaped.isnan(),dim=1)]
                 tensor = tensor_reshaped.reshape(tensor_reshaped.shape[0],*shape[1:])
 
-                images = Variable(tensor).to(device) 
+                images = Variable(tensor).to(device)
                 x_r, z_dist = model(images)
                 kl_loss = 0
                 kl_loss = kl_loss_fn(z_dist, sumdim=(1,2,3)) * beta
                 rec_loss_vae = rec_loss_fn(x_r, images, sumdim=(1,2,3))
                 loss_vae = kl_loss + rec_loss_vae * theta
                 mood_val_loss += loss_vae.item()
-                print("Validation loss: " + str(mood_val_loss))
+                print(f"Validation loss: {str(mood_val_loss)}")
 
     return model

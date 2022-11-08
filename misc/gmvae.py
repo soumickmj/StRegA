@@ -92,23 +92,34 @@ device = torch.device("cuda:0" if torch.cuda.is_available() and useCuda else "cp
 #device = 'cpu'
 
 def conv_block(in_channels, out_channels, kernel_size, padding, stride):
-    block = nn.Sequential(
-        nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, padding=padding, stride=stride),
-        nn.ReLU(inplace=True)
+    return nn.Sequential(
+        nn.Conv2d(
+            in_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            padding=padding,
+            stride=stride,
+        ),
+        nn.ReLU(inplace=True),
     )
-    return block
 
 def transp_conv_block(in_channels, out_channels, kernel_size, padding, stride, output_padding = 0):
-    block = nn.Sequential(
-        nn.ConvTranspose2d(in_channels, out_channels, kernel_size=kernel_size, padding=padding, stride=stride, output_padding=output_padding),
-        nn.ReLU(inplace=True)
+    return nn.Sequential(
+        nn.ConvTranspose2d(
+            in_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            padding=padding,
+            stride=stride,
+            output_padding=output_padding,
+        ),
+        nn.ReLU(inplace=True),
     )
-    return block
 
 class GMVAE(nn.Module):
     def __init__(self):
         super(GMVAE, self).__init__()
-        
+
         self.dim_c = 9
         self.dim_z = 1
         self.dim_w = 1
@@ -119,33 +130,33 @@ class GMVAE(nn.Module):
         self.conv_block4 = conv_block(in_channels = 64, out_channels = 64, kernel_size = 3, padding = 1, stride = 2)
         self.conv_block5 = conv_block(in_channels = 64, out_channels = 64, kernel_size = 3, padding = 1, stride = 1)
         self.conv_block6 = conv_block(in_channels = 64, out_channels = 64, kernel_size = 3, padding = 1, stride = 1)
-        
+
         self.w_mu_layer = nn.Conv2d(64, self.dim_w, kernel_size = 1, padding = 0, stride = 1)
         self.w_log_sigma_layer = nn.Conv2d(64, self.dim_w, kernel_size = 1, padding = 0, stride = 1)
-        
+
         self.z_mu_layer = nn.Conv2d(64, self.dim_z, kernel_size = 1, padding = 0, stride = 1)
         self.z_log_sigma_layer = nn.Conv2d(64, self.dim_z, kernel_size = 1, padding = 0, stride = 1)
-        
+
         self.conv_block7 = conv_block(in_channels = 1, out_channels = 64, kernel_size = 1, padding = 0, stride = 1)
-        
+
         self.z_wc_mu_layer = nn.Conv2d(64, self.dim_z * self.dim_c, kernel_size = 1, padding = 0, stride = 1)
         self.z_wc_log_sigma_layer = nn.Conv2d(64, self.dim_z * self.dim_c, kernel_size = 1, padding = 0, stride = 1)
-        
+
         self.conv_block8 = conv_block(in_channels = 1, out_channels = 64, kernel_size = 3, padding = 1, stride = 1)
         self.transp_conv_block1 = transp_conv_block(in_channels = 64, out_channels = 64, kernel_size = 3, padding = 1, stride = 1)
         self.transp_conv_block2 = transp_conv_block(in_channels = 64, out_channels = 64, kernel_size = 3, padding = 1, stride = 1)
-        
+
         self.conv_block9 = conv_block(in_channels = 64, out_channels = 64, kernel_size = 3, padding = 1, stride = 1)
         self.transp_conv_block3 = transp_conv_block(in_channels = 64, out_channels = 64, kernel_size = 3, padding = 1, stride = 1)
         self.transp_conv_block4 = transp_conv_block(in_channels = 64, out_channels = 64, kernel_size = 3, padding = 1, stride = 1)
-        
+
         self.conv_block10 = conv_block(in_channels = 64, out_channels = 64, kernel_size = 3, padding = 1, stride = 1)
 
         self.xz_mu_layer = nn.Conv2d(64, 1, kernel_size = 3, padding = 1, stride = 1)
 
     def forward(self, image):
         outputs = {}
-        
+
         # encoding network q(z|x) and q(w|x)
         x1 = self.conv_block1(image)
         x2 = self.conv_block2(x1)
@@ -153,58 +164,58 @@ class GMVAE(nn.Module):
         x4 = self.conv_block4(x3)
         x5 = self.conv_block5(x4)
         x6 = self.conv_block6(x5)
-        
+
         outputs['w_mu'] = w_mu = self.w_mu_layer(x6)
         outputs['w_log_sigma'] = w_log_sigma = self.w_log_sigma_layer(x6)
         # reparametrization
         rand_w = (torch.randn(w_log_sigma.shape).to(device) * torch.exp(0.5 * w_log_sigma).to(device)).to(device)
         outputs['w_sampled'] = w_sampled = w_mu + rand_w
-        
+
         outputs['z_mu'] = z_mu = self.z_mu_layer(x6)
         outputs['z_log_sigma'] = z_log_sigma = self.z_log_sigma_layer(x6)
         # reparametrization
         rand_z = (torch.randn(z_log_sigma.shape).to(device) * torch.exp(0.5 * z_log_sigma).to(device)).to(device)
         outputs['z_sampled'] = z_sampled = z_mu + rand_z
-        
+
         # posterior p(z|w,c)
         x7 = self.conv_block7(w_sampled)
         z_wc_mu = self.z_wc_mu_layer(x7)
         z_wc_log_sigma = self.z_wc_log_sigma_layer(x7)
-        
+
         bias = torch.full((z_wc_log_sigma.shape[1],), 0.1).view(1, -1, 1, 1).to(device)
         z_wc_log_sigma_inv = z_wc_log_sigma + bias
-        
+
         outputs['z_wc_mus'] = z_wc_mus = z_wc_mu.view(-1, self.dim_c, self.dim_z, z_wc_mu.shape[2], z_wc_mu.shape[3])
         outputs['z_wc_log_sigma_invs'] = z_wc_log_sigma_invs = z_wc_log_sigma_inv.view(-1, self.dim_c, self.dim_z, z_wc_log_sigma_inv.shape[2], z_wc_log_sigma_inv.shape[3])
         # reparametrization
         rand_z_wc = (torch.randn(z_wc_log_sigma_invs.shape).to(device) * torch.exp(z_wc_log_sigma_invs).to(device)).to(device)
         outputs['z_wc_sampled'] = z_wc_sampled = z_wc_mus + rand_z_wc
-        
+
         # decoder p(x|z)
         x8 = self.conv_block8(z_sampled)
         x9 = self.transp_conv_block1(x8)
         x10 = dec_part1 = self.transp_conv_block2(x9)
-        
+
         dec_part1_reshaped = nn.Upsample(scale_factor=2, mode='nearest')(dec_part1)
         dec_part1_padded = dec_part1_reshaped
-        
+
         x11 = self.conv_block9(dec_part1_padded)
         x12 = self.transp_conv_block3(x11)
         x13 = dec_part2 = self.transp_conv_block4(x12)
-        
+
         dec_part2_reshaped = nn.Upsample(scale_factor=2, mode='nearest')(dec_part2)
         dec_part2_padded = dec_part2_reshaped
-        
+
         dec = self.conv_block10(dec_part2_padded)
         outputs['xz_mu'] = xz_mu = self.xz_mu_layer(dec)
-        
+
         # prior p(c)
         z_sample = z_sampled.unsqueeze(dim = 1).repeat(1, self.dim_c, 1, 1, 1)
         loglh = -0.5 * (((z_sample - z_wc_mus) ** 2) * torch.exp(z_wc_log_sigma_invs)) - z_wc_log_sigma_invs + torch.log(torch.tensor(np.pi))
         loglh_sum = torch.sum(loglh, dim = 2)
         outputs['pc_logit'] = pc_logit = loglh_sum
         outputs['pc'] = pc = nn.Softmax(dim = 1)(loglh_sum)
-        
+
         return outputs
 
 class GMVAE_Trainer():
@@ -212,7 +223,7 @@ class GMVAE_Trainer():
         super(GMVAE_Trainer, self).__init__()
         self.model = GMVAE()
         self.model.to(device)
-        
+
         self.optimizer = Adam(self.model.parameters(), lr = learning_rate)
         self.scaler = GradScaler()
         self.dim_c = 9
@@ -222,7 +233,7 @@ class GMVAE_Trainer():
         self.restore_lr = 1e-3
         self.restore_steps = 0
         self.tv_lambda = -1.0
-        
+
         wandb.init(project='anomaly', entity='s9chroma')
         wandb.watch(self.model)
         config = wandb.config
@@ -238,11 +249,9 @@ class GMVAE_Trainer():
         pixel_dif1 = images[:, :, 1:, :] - images[:, :, :-1, :]
         pixel_dif2 = images[:, :, :, 1:] - images[:, :, :, :-1]
 
-        # Calculate the total variation by taking the absolute value of the
-        # pixel-differences and summing over the appropriate axis.
-        # This results in a 1-D tensor with the total variation for each image.
-        tot_var = torch.abs(pixel_dif1).sum(dim = 1).sum(dim = 1).sum(dim = 1) + torch.abs(pixel_dif2).sum(dim = 1).sum(dim = 1).sum(dim = 1)
-        return tot_var
+        return torch.abs(pixel_dif1).sum(dim=1).sum(dim=1).sum(dim=1) + torch.abs(
+            pixel_dif2
+        ).sum(dim=1).sum(dim=1).sum(dim=1)
     
     def train(self, train_loader, ixi_val_loader, mood_val_loader):
         for epoch in range(num_epochs):
