@@ -1,2 +1,2 @@
-from datasets.mood import MoodTrainSet, MoodValSet
-from datasets.torchiowrap import H5DSImage
+from .mood import MoodTrainSet, MoodValSet
+from .torchiowrap import H5DSImage

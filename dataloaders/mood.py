@@ -5,7 +5,7 @@ import torch
 from torch.utils.data import Dataset
 from torchio.data.subject import Subject
 
-from datasets.torchiowrap import H5DSImage
+from .torchiowrap import H5DSImage
 
 class MoodTrainSet(Dataset):
     def __init__(self, indices=None, region='brain', data_path='MOOD_train.h5', torchiosub=True, lazypatch=True, preload=False):

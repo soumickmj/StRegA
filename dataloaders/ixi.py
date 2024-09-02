@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 from torchio.data.subject import Subject
-from datasets.ixi_torchiowrap import IXI_H5DSImage
+from .ixi_torchiowrap import IXI_H5DSImage
 
 class IXITrainSet(Dataset):
     def __init__(self, indices=None,data_path='Ixi_with_skull.h5', torchiosub=True, lazypatch=True, preload=False):
