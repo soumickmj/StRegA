@@ -18,7 +18,13 @@ The name "StRegA" is inspired by the name of the Italian herb liquore with saffr
 
 ### Checkpoint
 
-The model checkpoint `brain.ptrh` can be loaded with the same model with `torch.load` function. This was trained on IXI + MOOD T1, T2 and Proton Density Images that were segmented with FSL. 
+A "master" checkpoint was created (not part of the manuscript) by training on MOOD (T1) + IXI T1 + IXI T2 + IXI PD MRIs segmented with FSL. This can be found on Huggingface: [https://huggingface.co/soumickmj/StRegA_cceVAE2D_Brain_MOOD_IXIT1_IXIT2_IXIPD](https://huggingface.co/soumickmj/StRegA_cceVAE2D_Brain_MOOD_IXIT1_IXIT2_IXIPD). This checkpoint can directly be used (example provided in Pipeline.ipynb notebook) or can be saved as a checkpoint file to make it like a locally-trained model.
+Here is an example:
+```python
+from transformers import AutoModel
+modelHF = AutoModel.from_pretrained("soumickmj/StRegA_cceVAE2D_Brain_MOOD_IXIT1_IXIT2_IXIPD", trust_remote_code=True)
+torch.save(modelHF.model, "/path/to/checkpoint/brain.ptrh")
+```
 
 ## Contacts
 
