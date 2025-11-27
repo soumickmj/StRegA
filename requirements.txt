@@ -1,0 +1,26 @@
+# StRegA Requirements
+# Core dependencies
+torch>=1.9.0
+torchvision>=0.10.0
+numpy>=1.19.0
+scipy>=1.7.0
+
+# Medical imaging
+nibabel>=3.2.0
+h5py>=3.0.0
+torchio>=0.18.0
+
+# Image processing
+scikit-image>=0.18.0
+
+# Utilities
+tqdm>=4.60.0
+pandas>=1.3.0
+matplotlib>=3.4.0
+seaborn>=0.11.0
+
+# HuggingFace (for pretrained model)
+transformers>=4.20.0
+
+# Optional: Experiment tracking
+# wandb>=0.12.0
