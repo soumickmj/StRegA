@@ -7,10 +7,40 @@ Abstract available on RG: https://www.researchgate.net/publication/358357400_StR
 
 The name "StRegA" is inspired by the name of the Italian herb liquore with saffron - Strega (following the tradition of namming MR-related products with name of alchoholic drinks or liquores.
 
+## Demo & Documentation
+
+📖 **See [DEMO.md](DEMO.md) for comprehensive training and inference instructions**, including:
+- Complete training workflow with all parameters
+- Testing with locally trained models
+- Testing with HuggingFace pre-trained model
+- Paper experiment configurations
+- Evaluation metrics
+
+### Quick Start - Inference
+
+```bash
+# Using HuggingFace pre-trained model
+python inference.py --input /path/to/brain_mri.nii.gz --output /path/to/results/
+
+# Using local checkpoint
+python inference.py --input /path/to/brain_mri.nii.gz --output /path/to/results/ \
+                    --checkpoint /path/to/model.pth.tar
+```
+
+### Quick Start - Evaluation
+
+```bash
+python evaluate.py --predictions /path/to/predictions/ --ground_truth /path/to/gt/ \
+                   --output results.csv --verbose
+```
+
 ## Information regarding this repo
 
 ### Code structure
 
+- `DEMO.md` - Comprehensive documentation for training and inference
+- `inference.py` - Standalone inference script for anomaly detection
+- `evaluate.py` - Evaluation script for computing metrics (Dice, F1, etc.)
 - `engine.py` and `train.py` are used to train new models with a custom data loader expected to iterate over slices of FSL segmented data on the 2D model
 - `ccevae.py` contains the model code and uses parts from `ae_bases.py`, `ce_noise.py` and `helpers.py`
 - `Pipeline.ipynb` shows the entire StRegA pipeline including post-processing.
