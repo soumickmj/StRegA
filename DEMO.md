@@ -334,6 +334,48 @@ python run_training.py
 
 ## Testing/Inference
 
+### Quick Start with CLI
+
+The `inference.py` script supports three input formats:
+
+```bash
+# 1. Single NIfTI file
+python inference.py -i /path/to/brain.nii.gz -o /path/to/output/
+
+# 2. Directory of NIfTI files (processes all .nii and .nii.gz files)
+python inference.py -i /path/to/nifti_folder/ -o /path/to/output/
+
+# 3. HDF5 file (same format as training dataset)
+python inference.py -i /path/to/data.h5 -o /path/to/output/ --input_format h5
+
+# HDF5 with region key (for MOOD format)
+python inference.py -i /path/to/mood.h5 -o /path/to/output/ --input_format h5 --h5_region brain
+
+# HDF5 with specific indices
+python inference.py -i /path/to/data.h5 -o /path/to/output/ --input_format h5 --h5_indices 0-100
+
+# Output to HDF5 file instead of NIfTI
+python inference.py -i /path/to/data.h5 -o /path/to/results.h5 --input_format h5
+
+# Using local checkpoint
+python inference.py -i /path/to/input/ -o /path/to/output/ -c /path/to/checkpoint.pth.tar
+```
+
+### CLI Options
+
+| Option | Description |
+|--------|-------------|
+| `--input, -i` | Input path: NIfTI file, directory of NIfTI files, or HDF5 file |
+| `--output, -o` | Output directory or HDF5 file path |
+| `--input_format` | Input format: `auto` (default), `nifti`, or `h5` |
+| `--h5_region` | Region key for HDF5 (e.g., "brain" for MOOD format) |
+| `--h5_indices` | Indices to process (e.g., "0,1,2" or "0-100") |
+| `--checkpoint, -c` | Path to model checkpoint (uses HuggingFace if not provided) |
+| `--checkpoint_format` | Checkpoint format: `pth.tar` or `ptrh` |
+| `--device, -d` | Device for inference (default: cuda:0) |
+| `--area_threshold` | Minimum area for morphological opening (default: 256) |
+| `--anomaly_threshold` | Initial anomaly detection threshold (default: 0.2) |
+
 ### Option 1: Using Locally Trained Model
 
 ```python
