@@ -195,16 +195,34 @@ def detect_anomalies(model, volume, device, area_threshold=256,
         anomaly_mask: Binary mask of detected anomalies
         diff_map: Continuous difference map
         reconstruction: Model reconstruction
+    
+    Note:
+        Normalization is done per-slice (batch-wise) to match the training pipeline.
+        Training uses: (x - min) / max which shifts minimum to zero and scales by max.
+        This matches the normalization in train.py lines 24-27.
     """
     volume = volume.to(device)
     
-    # Normalize to [0, 1]
-    vol_min = torch.min(volume)
-    vol_max = torch.max(volume)
-    if vol_max > vol_min:
-        volume_norm = (volume - vol_min) / (vol_max - vol_min)
-    else:
-        volume_norm = volume
+    # Normalize per-slice to match training pipeline exactly
+    # Training uses: tmp = (tmp - min_vals) / max_vals
+    # This shifts min to 0 and scales by max value
+    # Shape: (N_slices, 1, H, W) -> flatten spatial dims for per-slice normalization
+    volume_flat = volume.view(volume.shape[0], 1, -1)  # (N, 1, H*W)
+    min_vals = volume_flat.min(dim=2, keepdim=True).values  # (N, 1, 1)
+    max_vals = volume_flat.max(dim=2, keepdim=True).values  # (N, 1, 1)
+    
+    # Division by zero protection: if max is 0 (constant slice), keep original values
+    # Training doesn't explicitly handle this but such slices would be empty/background
+    # and would typically be filtered by the NaN removal or mask application later
+    valid_max = max_vals != 0
+    volume_flat_norm = torch.where(
+        valid_max,
+        (volume_flat - min_vals) / torch.where(valid_max, max_vals, torch.ones_like(max_vals)),
+        volume_flat
+    )
+    volume_norm = volume_flat_norm.view(volume.shape)
+    
+    # Handle NaN values - matching training which removes NaN rows
     volume_norm = torch.nan_to_num(volume_norm, nan=0.0)
     
     # Run inference
