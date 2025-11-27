@@ -25,10 +25,12 @@ import numpy as np
 import torch
 import torch.nn as nn
 import nibabel as nib
-from scipy import ndimage
 from skimage import morphology, filters
 from torch.cuda.amp import autocast
 from torchio import transforms
+
+# Default threshold for initial anomaly detection (values above this are considered anomalies)
+DEFAULT_ANOMALY_THRESHOLD = 0.2
 
 
 def load_model_from_checkpoint(checkpoint_path, device, checkpoint_format='pth.tar'):
@@ -128,7 +130,8 @@ def preprocess_volume(nifti_path, target_size=(256, 256)):
     return out, affine, original_shape
 
 
-def detect_anomalies(model, volume, device, area_threshold=256):
+def detect_anomalies(model, volume, device, area_threshold=256, 
+                     anomaly_threshold=DEFAULT_ANOMALY_THRESHOLD):
     """
     Run StRegA anomaly detection on a preprocessed volume.
     
@@ -137,6 +140,7 @@ def detect_anomalies(model, volume, device, area_threshold=256):
         volume: Preprocessed volume tensor (N_slices, 1, H, W)
         device: torch device
         area_threshold: Minimum area for morphological opening
+        anomaly_threshold: Initial threshold for anomaly detection (default: 0.2)
     
     Returns:
         anomaly_mask: Binary mask of detected anomalies
@@ -169,8 +173,8 @@ def detect_anomalies(model, volume, device, area_threshold=256):
     m_diff_mask = diff_map.copy()
     m_diff_mask[m_diff_mask < 0] = 0
     
-    # 2. Initial thresholding
-    m_diff_mask[m_diff_mask > 0.2] = 1
+    # 2. Initial thresholding using configurable threshold
+    m_diff_mask[m_diff_mask > anomaly_threshold] = 1
     
     # 3. Otsu thresholding for adaptive binarization
     if m_diff_mask.max() > 0:
@@ -209,6 +213,12 @@ def save_results(output_dir, anomaly_mask, diff_map, reconstruction,
         original_shape: Original volume shape
         affine: NIfTI affine matrix
         base_name: Base name for output files
+    
+    Note:
+        The output files are saved in the processed coordinate space (256x256 slices).
+        If the original volume had different dimensions, the outputs will not perfectly
+        align with the original. For production use, consider implementing proper
+        resampling to match original dimensions.
     """
     os.makedirs(output_dir, exist_ok=True)
     
@@ -221,9 +231,6 @@ def save_results(output_dir, anomaly_mask, diff_map, reconstruction,
     anomaly_mask = np.moveaxis(anomaly_mask, 0, 2)
     diff_map = np.moveaxis(diff_map, 0, 2)
     reconstruction = np.moveaxis(reconstruction, 0, 2)
-    
-    # Crop/pad back to original shape if needed
-    # (simplified - actual implementation would need proper resampling)
     
     # Save anomaly mask
     anomaly_nii = nib.Nifti1Image(anomaly_mask.astype(np.float32), affine)
@@ -282,6 +289,12 @@ def main():
         help='Minimum area for morphological opening (default: 256)'
     )
     parser.add_argument(
+        '--anomaly_threshold',
+        type=float,
+        default=DEFAULT_ANOMALY_THRESHOLD,
+        help=f'Initial threshold for anomaly detection (default: {DEFAULT_ANOMALY_THRESHOLD})'
+    )
+    parser.add_argument(
         '--save_huggingface', 
         type=str, 
         default=None,
@@ -322,7 +335,7 @@ def main():
     # Run anomaly detection
     print("Running anomaly detection...")
     anomaly_mask, diff_map, reconstruction = detect_anomalies(
-        model, volume, device, args.area_threshold
+        model, volume, device, args.area_threshold, args.anomaly_threshold
     )
     
     # Calculate statistics

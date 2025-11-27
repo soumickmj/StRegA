@@ -54,6 +54,10 @@ def precision_score(true_mask, pred_mask):
     
     Returns:
         Precision score (0-1)
+    
+    Edge cases:
+        - If no predictions are made and no positives exist: returns 1.0 (perfect precision)
+        - If no predictions are made but positives exist: returns 0.0 (no true positives found)
     """
     true_mask = np.asarray(true_mask).astype(bool)
     pred_mask = np.asarray(pred_mask).astype(bool)
@@ -62,6 +66,7 @@ def precision_score(true_mask, pred_mask):
     predicted_positives = np.sum(pred_mask)
     
     if predicted_positives == 0:
+        # No predictions made - return 1.0 if nothing to detect, 0.0 otherwise
         return 1.0 if np.sum(true_mask) == 0 else 0.0
     
     return true_positives / predicted_positives
@@ -77,6 +82,10 @@ def recall_score(true_mask, pred_mask):
     
     Returns:
         Recall score (0-1)
+    
+    Edge cases:
+        - If no actual positives exist and no predictions made: returns 1.0 (perfect recall)
+        - If no actual positives exist but predictions made: returns 0.0 (false positives)
     """
     true_mask = np.asarray(true_mask).astype(bool)
     pred_mask = np.asarray(pred_mask).astype(bool)
@@ -85,6 +94,7 @@ def recall_score(true_mask, pred_mask):
     actual_positives = np.sum(true_mask)
     
     if actual_positives == 0:
+        # No actual positives - return 1.0 if no predictions, 0.0 otherwise (false positives)
         return 1.0 if np.sum(pred_mask) == 0 else 0.0
     
     return true_positives / actual_positives
