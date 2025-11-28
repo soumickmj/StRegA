@@ -9,19 +9,32 @@ from .torchiowrap import H5DSImage
 
 class MoodTrainSet(Dataset):
     def __init__(self, indices=None, region='brain', data_path='MOOD_train.h5', torchiosub=True, lazypatch=True, preload=False):
-        self.h5 = h5.File(data_path, 'r', swmr=True)
+        # Support both single path and list of paths
+        if isinstance(data_path, str):
+            data_path = [data_path]
+        
+        self.h5_files = [h5.File(path, 'r', swmr=True) for path in data_path]
         self.samples = []
-        if indices:
-            self.samples = [self.h5[region][str(i).zfill(5)]for i in indices]
-            # self.samples2 = [self.h5[region][str(i).zfill(5)][:] for i in indices]
-        else:
-            self.samples = [self.h5[region][i] for i in list(self.h5[region])]
+        
+        for h5_file in self.h5_files:
+            if indices:
+                self.samples.extend([h5_file[region][str(i).zfill(5)] for i in indices])
+            else:
+                self.samples.extend([h5_file[region][i] for i in list(h5_file[region])])
+        
         if preload:
             print('Preloading MoodTrainSet')
             for i in range(len(self.samples)):
                 self.samples[i] = self.samples[i][:]
         self.torchiosub = torchiosub
         self.lazypatch = lazypatch
+
+    def __del__(self):
+        for h5_file in self.h5_files:
+            try:
+                h5_file.close()
+            except Exception:
+                pass
 
     def __len__(self):
         return len(self.samples)
@@ -34,12 +47,19 @@ class MoodTrainSet(Dataset):
 
 class MoodValSet(Dataset):
     def __init__(self, load_abnormal=True, load_normal=True, loadASTrain=False, data_path='MOOD_val.h5', torchiosub=True, lazypatch=True, preload=False):
-        self.h5 = h5.File(data_path, 'r', swmr=True)
+        # Support both single path and list of paths
+        if isinstance(data_path, str):
+            data_path = [data_path]
+        
+        self.h5_files = [h5.File(path, 'r', swmr=True) for path in data_path]
         self.samples = []
-        if load_abnormal:
-            self.samples+=[(self.h5['abnormal'][i], self.h5['abnormal_mask'][i]) for i in list(self.h5['abnormal'])]
-        if load_normal:
-            self.samples+=[self.h5['normal'][i] for i in list(self.h5['normal'])]
+        
+        for h5_file in self.h5_files:
+            if load_abnormal:
+                self.samples += [(h5_file['abnormal'][i], h5_file['abnormal_mask'][i]) for i in list(h5_file['abnormal'])]
+            if load_normal:
+                self.samples += [h5_file['normal'][i] for i in list(h5_file['normal'])]
+        
         if preload:
             print('Preloading MoodValSet')
             for i in range(len(self.samples)):
@@ -50,6 +70,13 @@ class MoodValSet(Dataset):
         self.loadASTrain = loadASTrain
         self.torchiosub = torchiosub
         self.lazypatch = lazypatch
+
+    def __del__(self):
+        for h5_file in self.h5_files:
+            try:
+                h5_file.close()
+            except Exception:
+                pass
 
     def __len__(self):
         return len(self.samples)

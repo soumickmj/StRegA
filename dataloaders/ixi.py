@@ -7,20 +7,33 @@ from torchio.data.subject import Subject
 from .ixi_torchiowrap import IXI_H5DSImage
 
 class IXITrainSet(Dataset):
-    def __init__(self, indices=None,data_path='Ixi_with_skull.h5', torchiosub=True, lazypatch=True, preload=False):
-        self.h5 = h5.File(data_path, 'r', swmr=True)
+    def __init__(self, indices=None, data_path='Ixi_with_skull.h5', torchiosub=True, lazypatch=True, preload=False):
+        # Support both single path and list of paths
+        if isinstance(data_path, str):
+            data_path = [data_path]
+        
+        self.h5_files = [h5.File(path, 'r', swmr=True) for path in data_path]
         self.samples = []
-        if indices:
-            self.samples = [self.h5[str(i).zfill(5)]for i in indices]
-            # self.samples2 = [self.h5[region][str(i).zfill(5)][:] for i in indices]
-        else:
-            self.samples = [self.h5[i] for i in list(self.h5[region])]
+        
+        for h5_file in self.h5_files:
+            if indices:
+                self.samples.extend([h5_file[str(i).zfill(5)] for i in indices])
+            else:
+                self.samples.extend([h5_file[i] for i in list(h5_file)])
+        
         if preload:
-            print('Preloading MoodTrainSet')
+            print('Preloading IXITrainSet')
             for i in range(len(self.samples)):
                 self.samples[i] = self.samples[i][:]
         self.torchiosub = torchiosub
         self.lazypatch = lazypatch
+
+    def __del__(self):
+        for h5_file in self.h5_files:
+            try:
+                h5_file.close()
+            except Exception:
+                pass
 
     def __len__(self):
         return len(self.samples)
