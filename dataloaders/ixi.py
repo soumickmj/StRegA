@@ -28,6 +28,13 @@ class IXITrainSet(Dataset):
         self.torchiosub = torchiosub
         self.lazypatch = lazypatch
 
+    def __del__(self):
+        for h5_file in self.h5_files:
+            try:
+                h5_file.close()
+            except Exception:
+                pass
+
     def __len__(self):
         return len(self.samples)
 
